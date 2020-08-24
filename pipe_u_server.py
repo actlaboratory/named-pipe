@@ -51,14 +51,10 @@ class server(threading.Thread):
 			try:
 				win32pipe.ConnectNamedPipe(self.pipeHandle, None)
 			except pywintypes.error as e:
-				if e.winerror == winerror.ERROR_INVALID_HANDLE:
-					self.close()
-					self.openPipe()
-					print("reOpen")
-				else:
-					self.close()
-					self.openPipe()
-					print("reOpen: " + str(e))
+				self.close()
+				self.openPipe()
+				print("reOpen: " + str(e))
+			#end except
 			while True:
 				try:
 					resp = win32file.ReadFile(self.pipeHandle, 64*1024)
@@ -66,7 +62,7 @@ class server(threading.Thread):
 					if e.winerror == winerror.ERROR_NO_DATA:
 						break
 					else:
-						print(e)
+						print("Error while receiving: %s" % str(e))
 						break
 				print(resp)
 				if resp[0] == 0:

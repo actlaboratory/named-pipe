@@ -65,7 +65,7 @@ class PipeError(Exception):
     pass
 
 if __name__ == '__main__':
-    c = client("test_develop")
+    c = client("testpipe")
     print("create Client (OK)")
     c.write("aaaaaaa")
     print("write (OK)")
