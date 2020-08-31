@@ -73,8 +73,8 @@ class Server(threading.Thread):
 			self.reopen()
 		#end except
 
-	func _handleMessage(self):
-			"""Internal function to handle incoming messages from the client."""
+	def _handleMessage(self):
+		"""Internal function to handle incoming messages from the client."""
 		while True:
 			try:
 				resp = win32file.ReadFile(self.pipeHandle, READ_SIZE)
