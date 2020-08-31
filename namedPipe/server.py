@@ -27,9 +27,17 @@ class Server(threading.Thread):
 		self.insize = insize
 		self.pipeHandle = None
 		self.canceled = False
+		self.onReceive=None
+		self.onDisconnect=None
 		self._openPipe()
-		self.inbox = []
-		self.outbox = []
+
+	def setReceiveCallback(self,callable):
+			"""Set a callback triggered when this server receives data."""
+			self.onReceive=callable
+
+	def setReceiveCallback(self,callable):
+			"""Set a callback triggered when the client disconnects. After triggering this callback, this module recreates pipe."""
+			self.onDisconnect=callable
 
 	def _openPipe(self):
 		"""Internal function to open a named pipe."""
@@ -51,34 +59,34 @@ class Server(threading.Thread):
 		#end except
 
 	def run(self):
+		"""Thread entry point. Do not call this function maunally."""
 		while True:		
 			if self.canceled: break
 			self._handleClient()
+			self._handleMessage()
 
 	def _handleClient(self):
-		"""Internal function to wait for client connection and receive messages."""
+		"""Internal function to wait for client connection."""
 		try:
 			win32pipe.ConnectNamedPipe(self.pipeHandle, None)
 		except pywintypes.error as e:
 			self.reopen()
-			print("Reopened pipe due to error: %s" % e)
 		#end except
+
+	func _handleMessage(self):
+			"""Internal function to handle incoming messages from the client."""
 		while True:
 			try:
 				resp = win32file.ReadFile(self.pipeHandle, READ_SIZE)
 			except pywintypes.error as e:
-				if e.winerror == winerror.ERROR_NO_DATA:
-					break
+				if e.winerror == winerror.ERROR_NO_DATA: break
 				if e.winerror==ERROR_BROKEN_PIPE:
-					print("Pipe ended, reopening...")
+					if self.onDisconnect: self.onDisconnect()
 					self.reopen()
 					break
-				else:
-					print("Error while receiving: %s" % str(e))
-					break
+			#end if disconnected
 			#end except
-			self.inbox.append(resp[1])
-			print("Received message: %s" % resp[1])
+			if self.onReceive: self.onReceive(resp[1].decode())
 			if resp[0] == 0: break
 			#end while
 		#end _handleClient

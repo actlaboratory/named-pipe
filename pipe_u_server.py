@@ -23,6 +23,8 @@ class server(threading.Thread):
 		self.pipeHandle = None
 		self.canceled = False
 		self.openPipe()
+		self.onReceive=None
+		self.onDisconnect=None
 		self.inbox = []
 		self.outbox = []
 
@@ -53,7 +55,6 @@ class server(threading.Thread):
 			except pywintypes.error as e:
 				self.close()
 				self.openPipe()
-				print("reOpen: " + str(e))
 			#end except
 			while True:
 				try:
@@ -62,28 +63,14 @@ class server(threading.Thread):
 					if e.winerror == winerror.ERROR_NO_DATA:
 						break
 					else:
-						print("Error while receiving: %s" % str(e))
 						break
-				print(resp)
 				if resp[0] == 0:
 					message += resp[1]
 					break
 				else:
 					message += resp[1]
-					print(message)
 					continue
-
-			self.inbox.append(message.decode())
-			for out in self.outbox:
-				win32file.WriteFile(self.pipeHandle, out)
-
-	def getInbox(self):
-		returnbox = self.inbox
-		self.inbox.clear()
-		return returnbox
-
-	def setOutbox(self, data):
-		self.outbox.append(data)
+			if self.onReceive: self.onReceive(message.decode()))
 
 	def stop(self):
 		self.canceled = True
