@@ -6,6 +6,10 @@ import time
 
 pipeServer=namedPipe.Server("testpipe")
 pipeServer.start()
-print("Pipe set up. press return to stop.")
-time.sleep(10)
-pipeServer.exit()
+print("Pipe set up. press ctrl+c to stop.")
+try:
+	while(True):
+		time.sleep(10)
+except:
+	print("Exiting")
+	pipeServer.exit()
