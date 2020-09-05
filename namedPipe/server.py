@@ -2,7 +2,7 @@
 
 """Named pipe server object."""
 
-import win32pipe, win32file, pywintypes
+import win32pipe, win32file, pywintypes, win32event
 import os
 import threading
 import time
@@ -20,15 +20,17 @@ class Server(threading.Thread):
 	"""Instantiate this class with pipe name to create a named pipe."""
 	def __init__(self, name, openMode = MODE_DUPLEX, max = 1, outsize = 64*1024+1, insize = 64*1024+1):
 		super().__init__()
+		self.setDaemon(True)
 		self.name = name
 		self.openMode = openMode
 		self.max = max
 		self.outsize = outsize
 		self.insize = insize
 		self.pipeHandle = None
-		self.canceled = False
+		self.should_exit=False
 		self.onReceive=None
 		self.onDisconnect=None
+		self.get_buffer=[]
 		self._openPipe()
 
 	def setReceiveCallback(self,callable):
@@ -44,8 +46,8 @@ class Server(threading.Thread):
 		try:
 			self.pipeHandle = win32pipe.CreateNamedPipe(
 				"\\\\.\\pipe\\%s" % (self.name),
-				self.openMode,
-				win32pipe.PIPE_TYPE_MESSAGE | win32pipe.PIPE_READMODE_MESSAGE | win32pipe.PIPE_WAIT,
+				self.openMode | win32file.FILE_FLAG_OVERLAPPED,
+				win32pipe.PIPE_TYPE_MESSAGE | win32pipe.PIPE_READMODE_MESSAGE,
 				self.max,
 				self.outsize,
 				self.insize,
@@ -61,17 +63,30 @@ class Server(threading.Thread):
 	def run(self):
 		"""Thread entry point. Do not call this function maunally."""
 		while True:		
-			if self.canceled: break
 			self._handleClient()
+			if self.should_exit: break
 			self._handleMessage()
+			if self.should_exit: break
 
 	def _handleClient(self):
 		"""Internal function to wait for client connection."""
+		overlapped=pywintypes.OVERLAPPED()
+		overlapped.hEvent=win32event.CreateEvent(None, 0, 0, None)
 		try:
-			win32pipe.ConnectNamedPipe(self.pipeHandle, None)
+			win32pipe.ConnectNamedPipe(self.pipeHandle, overlapped)
 		except pywintypes.error as e:
-			self.reopen()
+			print("error")
 		#end except
+		print("connectNamedPipe returned.")
+		while True:
+			try:
+				size=win32file.GetOverlappedResult(self.pipeHandle,overlapped,False)
+			except pywintypes.error: pass
+			print("wait")
+			time.sleep(1)
+			if self.should_exit:
+				print("exit")
+				break
 
 	def _handleMessage(self):
 		"""Internal function to handle incoming messages from the client."""
@@ -84,12 +99,13 @@ class Server(threading.Thread):
 					if self.onDisconnect: self.onDisconnect()
 					self.reopen()
 					break
-			#end if disconnected
+				#end if disconnected
 			#end except
-			if self.onReceive: self.onReceive(resp[1].decode())
-			if resp[0] == 0: break
-			#end while
-		#end _handleClient
+			msg=resp[1].decode()
+			self.get_buffer.append(msg)
+			if self.onReceive: self.onReceive(msg)
+		#end while
+	#end _handleClient
 
 	def reopen(self):
 		"""Reopens this pipe."""
@@ -99,3 +115,12 @@ class Server(threading.Thread):
 	def close(self):
 		"""Closes this named pipe."""
 		win32file.CloseHandle(self.pipeHandle)
+
+	def getNewMessageList(self):
+		"""Checks if this pipe has new messages since the last call."""
+		if len(self.get_buffer)==0: return None
+		return [e for e in self.get_buffer]
+
+	def exit(self):
+		"""Exits the pipe processing"""
+		self.should_exit=True
