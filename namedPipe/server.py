@@ -77,15 +77,12 @@ class Server(threading.Thread):
 		except pywintypes.error as e:
 			print("error")
 		#end except
-		print("connectNamedPipe returned.")
 		while True:
 			try:
 				size=win32file.GetOverlappedResult(self.pipeHandle,overlapped,False)
 			except pywintypes.error: pass
-			print("wait")
 			time.sleep(1)
 			if self.should_exit:
-				print("exit")
 				break
 
 	def _handleMessage(self):
@@ -124,3 +121,4 @@ class Server(threading.Thread):
 	def exit(self):
 		"""Exits the pipe processing"""
 		self.should_exit=True
+		self.join()
