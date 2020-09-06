@@ -26,7 +26,7 @@ class Server(threading.Thread):
 		self.max = max
 		self.outsize = outsize
 		self.insize = insize
-		self.pipeHandle = None
+		self.handle = None
 		self.should_exit=False
 		self.onConnect=None
 		self.onReceive=None
@@ -54,7 +54,7 @@ class Server(threading.Thread):
 	def _openPipe(self):
 		"""Internal function to open a named pipe."""
 		try:
-			self.pipeHandle = win32pipe.CreateNamedPipe(
+			self.handle = win32pipe.CreateNamedPipe(
 				"\\\\.\\pipe\\%s" % (self.name),
 				self.openMode | win32file.FILE_FLAG_OVERLAPPED,
 				win32pipe.PIPE_TYPE_MESSAGE | win32pipe.PIPE_READMODE_MESSAGE,
@@ -83,7 +83,7 @@ class Server(threading.Thread):
 		overlapped=pywintypes.OVERLAPPED()
 		overlapped.hEvent=win32event.CreateEvent(None, 0, 0, None)
 		try:
-			win32pipe.ConnectNamedPipe(self.pipeHandle, overlapped)
+			win32pipe.ConnectNamedPipe(self.handle, overlapped)
 		except pywintypes.error as e:
 			raise PipeError(e.strerror())
 			should_exit=True
@@ -91,7 +91,7 @@ class Server(threading.Thread):
 		#end except
 		while True:
 			try:
-				size=win32file.GetOverlappedResult(self.pipeHandle,overlapped,False)
+				size=win32file.GetOverlappedResult(self.handle,overlapped,False)
 			except pywintypes.error: pass
 			if win32event.WaitForSingleObject(overlapped.hEvent,1000)==win32event.WAIT_OBJECT_0:
 				self._handleConnect()
@@ -108,7 +108,7 @@ class Server(threading.Thread):
 		"""Internal function to handle incoming messages from the client."""
 		while True:
 			try:
-				resp = win32file.ReadFile(self.pipeHandle, READ_SIZE)
+				resp = win32file.ReadFile(self.handle, READ_SIZE)
 			except pywintypes.error as e:
 				if e.winerror == winerror.ERROR_NO_DATA: break
 				if e.winerror==ERROR_BROKEN_PIPE:
@@ -131,12 +131,17 @@ class Server(threading.Thread):
 
 	def close(self):
 		"""Closes this named pipe."""
-		win32file.CloseHandle(self.pipeHandle)
+		win32file.CloseHandle(self.handle)
 
 	def getNewMessageList(self):
 		"""Checks if this pipe has new messages since the last call."""
 		if len(self.get_buffer)==0: return None
 		return [e for e in self.get_buffer]
+
+	def write(self,msg):
+		"""Writes a string data to the pipe."""
+		data = str.encode(f"{msg}")
+		win32file.WriteFile(self.handle, data)
 
 	def exit(self):
 		"""Exits the pipe processing"""

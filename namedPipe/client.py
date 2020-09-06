@@ -6,9 +6,6 @@ import sys
 import win32pipe, win32file, pywintypes
 import winerror
 
-AUTO_CLOSE = 2001
-NO_AUTO_CLOSE = 2000
-
 class Client():
 	"""named pipe client"""
 	def __init__(self, name):
@@ -30,27 +27,11 @@ class Client():
 	def disconnect(self):
 		if self.handle: win32file.CloseHandle(self.handle)
 
-	def read(self, mode = NO_AUTO_CLOSE):
-		returnMessage = ""
-		try:
-			while True:
-				resp = win32file.ReadFile(handle, 65535)
-				returnMessage += resp[1]
-				if resp[0]==1: break
-			#end while
-		except:
-			return False
-		#end except
-		if mode == AUTO_CLOSE: win32file.CloseHandle(self.handle)
-		return returnMessage
 
-	def write(self, message, mode = NO_AUTO_CLOSE):
+	def write(self, message):
 		try:
 			data = str.encode(f"{message}")
 			win32file.WriteFile(self.handle, data)
-			if mode == AUTO_CLOSE:
-				win32file.CloseHandle(self.handle)
-			#end auto close
 			return True
 		except:
 			return False
