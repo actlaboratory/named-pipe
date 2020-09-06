@@ -2,7 +2,6 @@
 
 """Named pipe client object."""
 
-import sys
 import win32pipe
 import win32file
 import pywintypes
