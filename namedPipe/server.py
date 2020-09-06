@@ -28,18 +28,28 @@ class Server(threading.Thread):
 		self.insize = insize
 		self.pipeHandle = None
 		self.should_exit=False
+		self.onConnect=None
 		self.onReceive=None
 		self.onDisconnect=None
+		self.onReopen=None
 		self.get_buffer=[]
 		self._openPipe()
+
+	def setConnectCallback(self,callable):
+			"""Set a callback triggered when a client connects."""
+			self.onConnect=callable
 
 	def setReceiveCallback(self,callable):
 			"""Set a callback triggered when this server receives data."""
 			self.onReceive=callable
 
-	def setReceiveCallback(self,callable):
+	def setDisconnectCallback(self,callable):
 			"""Set a callback triggered when the client disconnects. After triggering this callback, this module recreates pipe."""
 			self.onDisconnect=callable
+
+	def setReopenCallback(self,callable):
+			"""Set a callback triggered when the pipe is reopened after client disconnection."""
+			self.onReopen=callable
 
 	def _openPipe(self):
 		"""Internal function to open a named pipe."""
@@ -75,16 +85,25 @@ class Server(threading.Thread):
 		try:
 			win32pipe.ConnectNamedPipe(self.pipeHandle, overlapped)
 		except pywintypes.error as e:
-			print("error")
+			raise PipeError(e.strerror())
+			should_exit=True
+			return
 		#end except
 		while True:
 			try:
 				size=win32file.GetOverlappedResult(self.pipeHandle,overlapped,False)
 			except pywintypes.error: pass
-			if win32event.WaitForSingleObject(overlapped.hEvent,1000)==win32event.WAIT_OBJECT_0: break
+			if win32event.WaitForSingleObject(overlapped.hEvent,1000)==win32event.WAIT_OBJECT_0:
+				self._handleConnect()
+				break
+			#end connect
 			if self.should_exit:
 				break
-		print("connected")
+
+	def _handleConnect(self):
+		"""Called when a client connects."""
+		if self.onConnect: self.onConnect()
+
 	def _handleMessage(self):
 		"""Internal function to handle incoming messages from the client."""
 		while True:
@@ -108,6 +127,7 @@ class Server(threading.Thread):
 		"""Reopens this pipe."""
 		self.close()
 		self._openPipe()
+		if self.onReopen: self.onReopen()
 
 	def close(self):
 		"""Closes this named pipe."""
