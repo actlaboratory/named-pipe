@@ -44,7 +44,7 @@ class Client():
 
     def write(self, message):
         """
-                Writes string data to the connected pipe.
+            Writes string data to the connected pipe.
         """
         try:
             data = str.encode(f"{message}")

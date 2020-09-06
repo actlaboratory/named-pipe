@@ -21,8 +21,8 @@ ERROR_BROKEN_PIPE = 109
 
 class Server(threading.Thread):
     """
-                    Instantiate this class with pipe name to create a named pipe.
-            """
+        Instantiate this class with pipe name to create a named pipe.
+    """
 
     def __init__(self, name):
         """
@@ -183,10 +183,10 @@ class Server(threading.Thread):
 
     def write(self, msg):
         """
-                Writes a string data to the pipe.
+            Writes a string data to the pipe.
 
-                :param msg: Message to send.
-                :type msg: str
+            :param msg: Message to send.
+            :type msg: str
         """
         data = str.encode(f"{msg}")
         win32file.WriteFile(self.handle, data)
