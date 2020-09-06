@@ -17,15 +17,24 @@ ERROR_BROKEN_PIPE=109
 
 
 class Server(threading.Thread):
-	"""Instantiate this class with pipe name to create a named pipe."""
-	def __init__(self, name, openMode = MODE_DUPLEX, max = 1, outsize = 64*1024+1, insize = 64*1024+1):
+	"""
+			Instantiate this class with pipe name to create a named pipe.
+		"""
+	def __init__(self, name):
+		"""
+			Initializes a new named pipe.
+
+			:param name: Name of the pipe.
+			:type name: str
+		"""
+
 		super().__init__()
 		self.setDaemon(True)
 		self.name = name
-		self.openMode = openMode
-		self.max = max
-		self.outsize = outsize
-		self.insize = insize
+		self.openMode = MODE_DUPLEX
+		self.max = 1
+		self.outsize = 65535
+		self.insize = 65535
 		self.handle = None
 		self.should_exit=False
 		self.onConnect=None
@@ -36,20 +45,40 @@ class Server(threading.Thread):
 		self._openPipe()
 
 	def setConnectCallback(self,callable):
-			"""Set a callback triggered when a client connects."""
-			self.onConnect=callable
+		"""
+			Set a callback triggered when a client connects.
+
+			:param callable: Callback function to call.
+			:type callable: callable
+		"""
+		self.onConnect=callable
 
 	def setReceiveCallback(self,callable):
-			"""Set a callback triggered when this server receives data."""
-			self.onReceive=callable
+		"""
+			Set a callback triggered when this server receives data.
+
+			:param callable: Callback function to call.
+			:type callable: callable
+		"""
+		self.onReceive=callable
 
 	def setDisconnectCallback(self,callable):
-			"""Set a callback triggered when the client disconnects. After triggering this callback, this module recreates pipe."""
-			self.onDisconnect=callable
+		"""
+			Set a callback triggered when the client disconnects. After triggering this callback, this module recreates pipe.
+
+			:param callable: Callback function to call.
+			:type callable: callable
+		"""
+		self.onDisconnect=callable
 
 	def setReopenCallback(self,callable):
-			"""Set a callback triggered when the pipe is reopened after client disconnection."""
-			self.onReopen=callable
+		"""
+			Set a callback triggered when the pipe is reopened after client disconnection.
+
+			:param callable: Callback function to call.
+			:type callable: callable
+		"""
+		self.onReopen=callable
 
 	def _openPipe(self):
 		"""Internal function to open a named pipe."""
@@ -101,7 +130,7 @@ class Server(threading.Thread):
 				break
 
 	def _handleConnect(self):
-		"""Called when a client connects."""
+		"""Internal function called when a client connects."""
 		if self.onConnect: self.onConnect()
 
 	def _handleMessage(self):
@@ -134,16 +163,21 @@ class Server(threading.Thread):
 		win32file.CloseHandle(self.handle)
 
 	def getNewMessageList(self):
-		"""Checks if this pipe has new messages since the last call."""
+		"""Checks if this pipe has new messages since the last call. Returns None if no message is received."""
 		if len(self.get_buffer)==0: return None
 		return [e for e in self.get_buffer]
 
 	def write(self,msg):
-		"""Writes a string data to the pipe."""
+		"""
+			Writes a string data to the pipe.
+
+			:param msg: Message to send.
+			:type msg: str
+		"""
 		data = str.encode(f"{msg}")
 		win32file.WriteFile(self.handle, data)
 
 	def exit(self):
-		"""Exits the pipe processing"""
+		"""Exits the pipe processing. You must call this function to safely exit pipe."""
 		self.should_exit=True
 		self.join()
