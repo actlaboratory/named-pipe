@@ -81,10 +81,10 @@ class Server(threading.Thread):
 			try:
 				size=win32file.GetOverlappedResult(self.pipeHandle,overlapped,False)
 			except pywintypes.error: pass
-			time.sleep(1)
+			if win32event.WaitForSingleObject(overlapped.hEvent,1000)==win32event.WAIT_OBJECT_0: break
 			if self.should_exit:
 				break
-
+		print("connected")
 	def _handleMessage(self):
 		"""Internal function to handle incoming messages from the client."""
 		while True:

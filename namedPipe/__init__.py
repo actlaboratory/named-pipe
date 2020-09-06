@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from .server import *
-#from .client import *
+from .client import *
 
 __copyright__    = 'Copyright (C) 2020 Yukio Nozawa'
 __version__      = '1.0.0'
