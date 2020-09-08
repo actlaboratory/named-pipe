@@ -65,6 +65,7 @@ class TestNamedPipe(unittest.TestCase):
         self.assertEqual(len(lst), 2)
         self.assertEqual(lst[0], msg1)
         self.assertEqual(lst[1], msg2)
+        self.assertTrue(pipeServer.getNewMessageList() is None)
         pipeClient.disconnect()
         pipeServer.exit()
 
