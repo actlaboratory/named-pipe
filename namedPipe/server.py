@@ -179,7 +179,9 @@ class Server(threading.Thread):
         """Checks if this pipe has new messages since the last call. Returns None if no message is received."""
         if len(self.get_buffer) == 0:
             return None
-        return [e for e in self.get_buffer]
+        ret=[e for e in self.get_buffer]
+        self.get_buffer=[]
+        return ret
 
     def write(self, msg):
         """
