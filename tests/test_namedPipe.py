@@ -14,6 +14,7 @@ class TestNamedPipe(unittest.TestCase):
         pipeServer.setConnectCallback(self.onConnect)
         pipeServer.setDisconnectCallback(self.onDisconnect)
         pipeServer.setReopenCallback(self.onReopen)
+        self.assertEqual(pipeServer.getFullName(), "\\\\.\\pipe\\testpipe")
         pipeServer.start()
         time.sleep(0.3)
         pipeClient = namedPipe.Client("testpipe")

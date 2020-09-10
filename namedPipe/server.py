@@ -193,6 +193,9 @@ class Server(threading.Thread):
         data = str.encode(f"{msg}")
         win32file.WriteFile(self.handle, data)
 
+    def getFullName(self):
+        return "\\\\.\\pipe\\%s" % (self.name)
+
     def exit(self):
         """Exits the pipe processing. You must call this function to safely exit pipe."""
         self.should_exit = True
