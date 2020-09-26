@@ -18,6 +18,7 @@ MODE_OUTBOUND = win32pipe.PIPE_ACCESS_OUTBOUND
 READ_SIZE = 65535
 ERROR_BROKEN_PIPE = 109
 
+class PipeAlreadyExistsError(Exception): pass
 
 class Server(threading.Thread):
     """

@@ -6,6 +6,16 @@ import namedPipe
 
 
 class TestNamedPipe(unittest.TestCase):
+    def test_duplicate(self):
+        pipeServer = namedPipe.Server("testpipe")
+        pipeServer.start()
+        time.sleep(0.3)
+        with self.assertRaises(namedPipe.PipeAlreadyExistsError):
+            pipeServer2 = namedPipe.Server("testpipe")
+            pipeServer2.start()
+        #end error
+        pipeServer.exit()
+
     def test_connection(self):
         self.connected = False
         self.disconnected = False
