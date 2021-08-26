@@ -47,6 +47,7 @@ class Server(threading.Thread):
         self.onDisconnect = None
         self.onReopen = None
         self.get_buffer = []
+        self.decodeOption="replace"
         self._openPipe()
 
     def setConnectCallback(self, callable):
@@ -158,7 +159,7 @@ class Server(threading.Thread):
                     break
                 # end if disconnected
             # end except
-            msg = resp[1].decode()
+            msg = resp[1].decode(errors=self.decodeOption)
             self.get_buffer.append(msg)
             if self.onReceive:
                 self.onReceive(msg)
@@ -201,3 +202,11 @@ class Server(threading.Thread):
         """Exits the pipe processing. You must call this function to safely exit pipe."""
         self.should_exit = True
         self.join()
+
+    def setDecodeOption(self,option):
+        """
+            Set decode option
+        """
+        if option not in ["strict", "replace", "surrogateescape", "ignore", "backslashreplace"]:
+            raise ValueError('option must be "strict", "replace", "surrogateescape", "ignore" or "backslashreplace"')
+        self.decodeOption = option
