@@ -80,6 +80,25 @@ class TestNamedPipe(unittest.TestCase):
         pipeClient.disconnect()
         pipeServer.exit()
 
+    def test_message_unicodefragment(self):
+        pipeServer = namedPipe.Server("testpipe")
+        pipeServer.start()
+        time.sleep(0.3)
+        pipeClient = namedPipe.Client("testpipe")
+        pipeClient.connect()
+        time.sleep(1)
+        msg1 = ("a" * (namedPipe.READ_SIZE - 1)) + "猫" # b'\xe7\x8c\xab'
+        pipeClient.write(msg1)
+        time.sleep(1)
+        lst = pipeServer.getNewMessageList()
+        self.assertTrue(isinstance(lst, list))
+        self.assertEqual(len(lst), 2)
+        self.assertEqual(lst[0], "a" * (namedPipe.READ_SIZE - 1))
+        self.assertEqual(lst[1], "猫")
+        pipeClient.disconnect()
+        pipeServer.exit()
+
+
     def onConnect(self):
         self.connected = True
 
