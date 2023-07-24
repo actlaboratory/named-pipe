@@ -43,6 +43,6 @@ setup(
 
     url=url,
 
-    description='patch maker for actlaboratory',
+    description='named pipe wrapper',
     long_description=long_description,
 )
