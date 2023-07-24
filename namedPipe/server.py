@@ -2,6 +2,7 @@
 
 """Named pipe server object."""
 
+import codecs
 import win32pipe
 import win32file
 import pywintypes
@@ -48,7 +49,12 @@ class Server(threading.Thread):
         self.onReopen = None
         self.get_buffer = []
         self.decodeOption="replace"
+        self._setupDecoder()
         self._openPipe()
+
+    def _setupDecoder(self):
+        """Internal function to setup decoder."""
+        self.decoder = codecs.getincrementaldecoder("UTF-8")(errors = self.decodeOption)
 
     def setConnectCallback(self, callable):
         """
@@ -159,7 +165,7 @@ class Server(threading.Thread):
                     break
                 # end if disconnected
             # end except
-            msg = resp[1].decode(errors=self.decodeOption)
+            msg = self.decoder.decode(resp[1])
             self.get_buffer.append(msg)
             if self.onReceive:
                 self.onReceive(msg)
@@ -205,8 +211,10 @@ class Server(threading.Thread):
 
     def setDecodeOption(self,option):
         """
-            Set decode option
+            Sets the decode option.
+            Please note that calling this method after receiving the data will reset the decoder, so some data may be lost.
         """
         if option not in ["strict", "replace", "surrogateescape", "ignore", "backslashreplace"]:
             raise ValueError('option must be "strict", "replace", "surrogateescape", "ignore" or "backslashreplace"')
         self.decodeOption = option
+        self.setupDecoder()
