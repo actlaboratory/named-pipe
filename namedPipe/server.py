@@ -35,7 +35,7 @@ class Server(threading.Thread):
         """
 
         super().__init__()
-        self.setDaemon(True)
+        self.daemon = True
         self.name = name
         self.openMode = MODE_DUPLEX
         self.max = 1
@@ -214,7 +214,8 @@ class Server(threading.Thread):
             Sets the decode option.
             Please note that calling this method after receiving the data will reset the decoder, so some data may be lost.
         """
-        if option not in ["strict", "replace", "surrogateescape", "ignore", "backslashreplace"]:
-            raise ValueError('option must be "strict", "replace", "surrogateescape", "ignore" or "backslashreplace"')
+        allowed_options = ["strict", "replace", "surrogateescape", "ignore", "backslashreplace"]
+        if option not in allowed_options:
+            raise ValueError("option must be one of " + " ".join(["\"" + e + "\"" for e in allowed_options]))
         self.decodeOption = option
-        self.setupDecoder()
+        self._setupDecoder()

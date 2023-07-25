@@ -98,6 +98,12 @@ class TestNamedPipe(unittest.TestCase):
         pipeClient.disconnect()
         pipeServer.exit()
 
+    def test_setDecodeOption(self):
+        pipeServer = namedPipe.Server("testpipe")
+        pipeServer.setDecodeOption("strict")
+        with self.assertRaises(ValueError, msg = "option must be one of \"strict\" \"replace\" \"surrogateescape\" \"ignore\" \"backslashreplace\""):
+            pipeServer.setDecodeOption("hoge")
+
 
     def onConnect(self):
         self.connected = True
