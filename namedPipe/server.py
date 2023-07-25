@@ -35,7 +35,7 @@ class Server(threading.Thread):
         """
 
         super().__init__()
-        self.setDaemon(True)
+        self.daemon = True
         self.name = name
         self.openMode = MODE_DUPLEX
         self.max = 1
